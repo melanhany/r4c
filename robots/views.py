@@ -6,15 +6,11 @@ from openpyxl import Workbook
 from datetime import datetime, timedelta
 import json
 
+from helpers.helpers import validate_json_data
 from .forms import RobotForm
 from .models import Robot
 
 # Create your views here.
-
-
-def validate_json_data(data, required_fields):
-    missing_fields = required_fields - set(data.keys())
-    return missing_fields
 
 
 def create_robot_instance(data) -> RobotForm:
