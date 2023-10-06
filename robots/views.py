@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import json
 
 from helpers.helpers import validate_json_data
+from .signals import robot_created
 from .forms import RobotForm
 from .models import Robot
 
@@ -42,6 +43,8 @@ def post_robot(request) -> JsonResponse:
             form = create_robot_instance(data)
             if form.is_valid():
                 robot = form.save()
+
+                robot_created.send(Robot, robot=robot)
                 response = {"message": f"New robot added with id: {robot.id}"}
                 return JsonResponse(response, status=201)
             else:

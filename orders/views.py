@@ -3,8 +3,11 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 import json
 
+from customers.models import Customer
+
 from .forms import OrderForm
-from .models import Order
+from .models import WaitlistedOrder
+from robots.models import Robot
 from helpers.helpers import validate_json_data
 
 # Create your views here.
@@ -32,9 +35,24 @@ def post_order(request) -> JsonResponse:
 
             form = create_order_instance(data)
             if form.is_valid():
+                customer_id = data["customer"]
+                robot_serial = data["robot_serial"]
+                try:
+                    Robot.objects.get(serial=robot_serial)
+                except Robot.DoesNotExist:
+                    customer = Customer.objects.get(id=customer_id)
+                    waitlisted_order = WaitlistedOrder(
+                        customer=customer, robot_serial=robot_serial
+                    )
+                    waitlisted_order.save()
+
+                    response = {"message": "There isn't robots with such serial"}
+                    return JsonResponse(response, status=400)
+
                 order = form.save()
                 response = {"message": f"New order added with id: {order.id}"}
                 return JsonResponse(response, status=201)
+
             else:
                 errors = form.errors
                 response = {"message": "Validation error", "errors": errors}
