@@ -14,12 +14,31 @@ from helpers.helpers import validate_json_data
 
 
 def create_order_instance(data) -> OrderForm:
+    """
+    Create an instance of the OrderForm with the given data.
+
+    Args:
+        data (dict): A dictionary containing data for creating an order instance.
+
+    Returns:
+        OrderForm: An instance of the OrderForm.
+    """
+
     order_data = {"customer": data["customer"], "robot_serial": data["robot_serial"]}
     return OrderForm(order_data)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
 def post_order(request) -> JsonResponse:
+    """
+    View function for creating a new order via HTTP POST request.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        JsonResponse: A JSON response containing the result of the operation.
+    """
     if request.method == "POST":
         try:
             data = json.loads(request.body.decode("utf-8"))

@@ -8,6 +8,30 @@ from robots.signals import robot_created
 
 @receiver(robot_created)
 def on_robot_created(sender, **kwargs):
+    """
+    Signal handler that sends an email notification to customers
+    when a robot they were interested in becomes available in stock.
+
+    Args:
+        sender: The sender of the signal.
+        kwargs (dict): Keyword arguments passed along with the signal.
+
+    This signal handler performs the following actions:
+    1. Retrieves the created robot from the signal arguments.
+    2. Queries the WaitlistedOrder model for customers interested in this robot.
+    3. Composes an email message with information about the available robot.
+    4. Sends an email to the interested customers.
+
+    Note: The email sending process uses Django's send_mail function.
+
+    Exceptions:
+        WaitlistedOrder.DoesNotExist: If no customers are interested in the robot, no action is taken.
+
+    Example Usage:
+    This signal handler is executed when a new robot is created and checks if any customers were
+    interested in that robot. If interested customers exist, it sends them an email notification.
+    """
+
     robot = kwargs["robot"]
 
     try:

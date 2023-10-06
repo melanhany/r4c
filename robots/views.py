@@ -15,6 +15,16 @@ from .models import Robot
 
 
 def create_robot_instance(data) -> RobotForm:
+    """
+    Create an instance of the RobotForm with the given data.
+
+    Args:
+        data (dict): A dictionary containing data for creating an order instance.
+
+    Returns:
+        RobotForm: An instance of the RobotForm.
+    """
+
     robot_data = {
         "serial": "{}-{}".format(data["model"], data["version"]),
         "model": data["model"],
@@ -26,6 +36,15 @@ def create_robot_instance(data) -> RobotForm:
 
 @method_decorator(csrf_exempt, name="dispatch")
 def post_robot(request) -> JsonResponse:
+    """
+    View function for creating a new order via HTTP POST request.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        JsonResponse: A JSON response containing the result of the operation.
+    """
     if request.method == "POST":
         try:
             data = json.loads(request.body.decode("utf-8"))
@@ -62,6 +81,34 @@ def post_robot(request) -> JsonResponse:
 
 @method_decorator(csrf_exempt, name="dispatch")
 def generate_weekly_report(request):
+    """
+    View function for generating a weekly report in Excel format.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: An HTTP response containing the generated Excel report.
+
+    This view function performs the following actions:
+    1. Creates a new Excel workbook using the `openpyxl` library.
+    2. Determines the current date as `end_date` and calculates `start_date` as 7 days before `end_date`.
+    3. Retrieves a list of unique robot models from the database.
+    4. Iterates over each unique model to create a separate worksheet for each model in the workbook.
+    5. Adds headers for "Модель" (Model), "Версия" (Version), and "Количество за неделю" (Count for the Week) to each worksheet.
+    6. Queries the database to retrieve data about the count of each robot model/version created in the past week.
+    7. Populates each worksheet with the retrieved data.
+    8. Removes the default "Sheet" from the workbook.
+    9. Prepares an HTTP response with the appropriate content type for an Excel file.
+    10. Sets the content disposition header to specify the filename for the generated Excel report.
+    11. Saves the workbook to the response content.
+    12. Returns the HTTP response with the generated Excel report as an attachment.
+
+    Example Usage:
+    This view is typically accessed via an HTTP request, such as a GET request. When accessed, it generates a weekly
+    report that provides insights into the number of robot models and versions created during the past week.
+    """
+
     wb = Workbook()
 
     end_date = datetime.now()  # Current datetime
