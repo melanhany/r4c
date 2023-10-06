@@ -1,10 +1,9 @@
-from typing import List
-from django.forms import ValidationError
-from django.http import JsonResponse
-from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-
+from django.db.models import Count
+from openpyxl import Workbook
+from datetime import datetime, timedelta
 import json
 
 from .forms import RobotForm
@@ -61,5 +60,46 @@ def post_robot(request) -> JsonResponse:
         response = {"message": "Invalid request."}
         return JsonResponse(response, status=400)
 
-def generate_weekly_report():
-    ...
+
+@method_decorator(csrf_exempt, name="dispatch")
+def generate_weekly_report(request):
+    wb = Workbook()
+
+    end_date = datetime.now()  # Current datetime
+    start_date = end_date - timedelta(days=7)  # 7 days before current datetime
+    unique_models = Robot.objects.values_list("model", flat=True).distinct()
+    for model in unique_models:
+        ws = wb.create_sheet(title=model)
+
+        ws["A1"] = "Модель"
+        ws["B1"] = "Версия"
+        ws["C1"] = "Количество за неделю"
+
+        model_version_data = (
+            Robot.objects.filter(model=model)
+            .filter(created__range=(start_date, end_date))
+            .values("model", "version")
+            .annotate(count_for_week=Count("version"))
+            .order_by("model", "version")
+        )
+
+        for i, data in enumerate(
+            model_version_data, start=2
+        ):  # Start from row 2, assuming headers in row 1
+            ws.cell(row=i, column=1, value=data["model"])
+            ws.cell(row=i, column=2, value=data["version"])
+            ws.cell(row=i, column=3, value=data["count_for_week"])
+    default_sheet = wb["Sheet"]
+    wb.remove(default_sheet)
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response[
+        "Content-Disposition"
+    ] = f"attachment; filename=report {start_date.date()}_{end_date.date()}.xlsx"
+
+    # Save the workbook to the response content
+    wb.save(response)
+
+    return response
